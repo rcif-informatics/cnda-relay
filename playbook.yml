@@ -27,16 +27,37 @@
         - virtualenv
         - python3-setuptools
       state: latest
+
+  ##################################################################################################
+  ## DOCKER
+  ##    To get the latest docker, use official Docker repo, as per
+  ##     https://www.digitalocean.com/community/tutorials/how-to-use-ansible-to-install-and-set-up-docker-on-ubuntu-20-04
+  ##################################################################################################
+
+  - name: Add Docker GPG apt Key
+    apt_key:
+      url: https://download.docker.com/linux/ubuntu/gpg
+      state: present
+
+  - name: Add Docker Repository
+    apt_repository:
+      repo: deb https://download.docker.com/linux/ubuntu focal stable
+      state: present
+
+  - name: Update apt, Install Docker + Compose packages
+    apt:
+      name:
+      - docker-ce
+      - docker-compose-plugin
+      state: latest
       update_cache: true
 
- - name: Install latest docker-compose (v2.4.1 as of 04/21/2022)
-    get_url:
-      url: "https://github.com/docker/compose/releases/download/v2.4.1/docker-compose-linux-x86_64"
-      checksum: sha256:6dc9096eb6aed220e9b876b3ae6edbffa8bb3beaa5936d11495acd90ea6246f1
-      dest: /usr/local/bin/docker-compose
-      owner: root
-      group: root
-      mode: 0555
+  - name: Make sure docker service is enabled
+    service:
+      name: docker
+      state: started
+      enabled: yes
+
 
   - name: Check if a reboot is needed for Debian and Ubuntu boxes
     register: reboot_required_file
