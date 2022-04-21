@@ -58,6 +58,11 @@
       state: started
       enabled: yes
 
+  - name: Install Docker Module for Python
+    pip:
+      name:
+      - docker
+      - docker-compose
 
   - name: Check if a reboot is needed for Debian and Ubuntu boxes
     register: reboot_required_file
@@ -72,3 +77,23 @@
       post_reboot_delay: 30
       test_command: uptime
     when: reboot_required_file.stat.exists
+
+  ##################################################################################################
+  ## Server Configuration
+  ###
+  ##################################################################################################
+
+  - name: Copy docker-compose directory to remote
+    ansible.builtin.copy:
+      src: ./xnat-docker-compose-ccfrelay/
+      dest: /root/xnat-docker-compose-ccfrelay/
+      owner: root
+      group: root
+
+  - name: Create and Start services
+    community.docker.docker_compose:
+      project_src: /root/xnat-docker-compose-ccfrelay
+      project_name: xnat
+      build: yes
+
+  - 
