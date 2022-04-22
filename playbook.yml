@@ -18,6 +18,9 @@
     apt:
       pkg:
         - git
+        - fish
+        - vim
+        - ranger
         - apt-transport-https
         - ca-certificates
         - curl
@@ -90,10 +93,9 @@
       owner: root
       group: root
 
-  - name: Create and Start services
-    community.docker.docker_compose:
-      project_src: /root/xnat-docker-compose-ccfrelay
-      project_name: xnat
-      build: yes
+#  - name: Create and Start services
+#    community.docker.docker_compose:
+#      project_src: /root/xnat-docker-compose-ccfrelay
+#      project_name: xnat
+#      build: yes
 
-  - 
