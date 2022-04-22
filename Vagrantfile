@@ -1,6 +1,10 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
+# 1 GB of space
+disk = './secondDisk.vdi'
+disk_size = 1 * 1024
+
 Vagrant.configure("2") do |config|
   config.vm.box = "ubuntu/focal64"
   config.vm.box_check_update = false
@@ -35,6 +39,12 @@ Vagrant.configure("2") do |config|
   config.vm.provider "virtualbox" do |vb|
     # Customize the amount of memory on the VM:
     vb.memory = "8192"
+
+    # Create a additional hard drive for the VM.
+    unless File.exist?(disk)
+      vb.customize ["createhd", "--filename", disk, "--variant", "Fixed", "--size", disk_size]
+    end
+    vb.customize ['storageattach', :id,  '--storagectl', 'SCSI', '--port', 2, '--device', 0, '--type', 'hdd', '--medium', disk]
   end
 
   config.vm.provision "ansible" do |ansible|
