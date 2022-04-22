@@ -1,5 +1,7 @@
 # Vagrant files
 .vagrant/
+*.vdi
+luksKey
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
