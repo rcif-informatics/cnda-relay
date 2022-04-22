@@ -1,0 +1,123 @@
+---
+# https://www.redhat.com/sysadmin/encrypt-single-filesystem
+- name: pb to create partition
+  hosts: all
+  become: true
+  vars:
+    target_size: 800MiB
+    target_device: /dev/sdc
+    crypt_name: mycrypt
+    vg_name: examplevg
+    lv_name: examplelv
+    keyfile: /root/mylukskey.yml
+
+  tasks:
+  - name: block for doing basic setup and verification for target system
+    block:
+    - name: get facts for "{{ target_device }}"
+      parted:
+        device: "{{ target_device }}"
+      register: target_facts
+
+    - name: print facts for "{{ target_device }}"
+      debug:
+        msg: "{{ target_facts }}"
+
+    - name: check to see if there are any facts for /dev/vdb1. this means there are existing partitions that we would overwrite, so fail
+      debug:
+        msg: "{{ target_facts }}.partitions"
+#      failed_when: ansible_devices.sdc.partitions.sdc1 is defined   ### if vdb1 is defined, there's already a partition there, so abort.
+
+    - name: print size for the disk
+      debug:
+        msg: "the size is {{ target_facts['disk']['size'] }} kib"
+
+    - name: copy keyfile to remote system
+      copy:
+        src: luksKey
+        dest: "{{ keyfile }}"
+
+    - name: make sure cryptsetup is installed
+      apt:
+        name: cryptsetup
+        state: latest
+
+
+  - name: block to attempt to get info on what my destination device will become
+    block:
+      - name: task to attempt to get info on what my destination device will be
+        parted:
+          device: "{{ target_device}}"
+          number: 1
+          state: info
+        register: info_output
+      - name: print info_output
+        debug:
+          msg: "{{ info_output }}"
+
+  - name: block to attempt parted
+    block:
+    - name: use parted in block to create new partition
+      parted:
+        device: "{{ target_device }}"
+        number: 1
+        state: present
+        part_end: "{{ target_size }}"
+      register: parted_output
+    rescue:
+      - name: parted failed
+        fail:
+          msg: 'parted failed:  {{ parted_output }}'
+
+  - name: block for LUKS and filesystem tasks
+    block:
+    - name: create LUKS container with passphrase
+      luks_device:
+        device: "{{ target_device }}1"
+        state: present
+        name: "{{ crypt_name }}"
+        keyfile: "{{ keyfile }}"
+
+    - name: open luks container
+      luks_device:
+        device: "{{ target_device }}1"
+        state: opened
+        name: "{{ crypt_name }}"
+        keyfile: "{{ keyfile }}"
+
+    - name: create a new volgroup in that partition
+      lvg:
+        vg: "{{ vg_name }}"
+        pvs: "/dev/mapper/{{ crypt_name }}"
+
+    - name: create a logvol in my new vg
+      lvol:
+        vg: "{{ vg_name }}"
+        lv: "{{ lv_name }}"
+        size: 100%FREE
+
+    - name: create a filesystem
+      filesystem:
+        fstype: xfs
+        dev: "/dev/mapper/{{ vg_name }}-{{ lv_name }}"
+
+
+  - name: mount device
+    mount:
+      path: /mnt
+      src: "/dev/mapper/{{ vg_name }}-{{ lv_name }}"
+      state: mounted
+      fstype: xfs
+
+  - name: put some content in my new filesystem
+    copy:
+      content: "this is secure content!"
+      dest: /mnt/newcontent.txt
+
+  - name: set content in /etc/crypttab so I can mount the partition on reboot
+    copy:
+      content: "{{ crypt_name }} {{ target_device }}1 {{ keyfile }}"
+      dest: /etc/crypttab
+      owner: root
+      group: root
+      mode: 0644
