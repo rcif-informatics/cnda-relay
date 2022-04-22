@@ -1,15 +1,10 @@
----
-# https://www.redhat.com/sysadmin/encrypt-single-filesystem
 - name: pb to create partition
   hosts: all
   become: true
   vars:
     target_size: 800MiB
     target_device: /dev/sdc
-    crypt_name: mycrypt
-    vg_name: examplevg
-    lv_name: examplelv
-    keyfile: /root/mylukskey.yml
+    crypt_name: data
 
   tasks:
   - name: block for doing basic setup and verification for target system
@@ -31,11 +26,6 @@
     - name: print size for the disk
       debug:
         msg: "the size is {{ target_facts['disk']['size'] }} kib"
-
-    - name: copy keyfile to remote system
-      copy:
-        src: luksKey
-        dest: "{{ keyfile }}"
 
     - name: make sure cryptsetup is installed
       apt:
@@ -76,48 +66,54 @@
         device: "{{ target_device }}1"
         state: present
         name: "{{ crypt_name }}"
-        keyfile: "{{ keyfile }}"
+        passphrase: "pwd"
+        new_passphrase: "pwd2"
 
     - name: open luks container
       luks_device:
         device: "{{ target_device }}1"
         state: opened
         name: "{{ crypt_name }}"
-        keyfile: "{{ keyfile }}"
-
-    - name: create a new volgroup in that partition
-      lvg:
-        vg: "{{ vg_name }}"
-        pvs: "/dev/mapper/{{ crypt_name }}"
-
-    - name: create a logvol in my new vg
-      lvol:
-        vg: "{{ vg_name }}"
-        lv: "{{ lv_name }}"
-        size: 100%FREE
+        passphrase: "pwd"
 
     - name: create a filesystem
       filesystem:
-        fstype: xfs
-        dev: "/dev/mapper/{{ vg_name }}-{{ lv_name }}"
+        fstype: ext4
+        dev: "/dev/mapper/{{ crypt_name }}"
 
 
-  - name: mount device
-    mount:
-      path: /mnt
-      src: "/dev/mapper/{{ vg_name }}-{{ lv_name }}"
-      state: mounted
-      fstype: xfs
-
-  - name: put some content in my new filesystem
-    copy:
-      content: "this is secure content!"
-      dest: /mnt/newcontent.txt
-
-  - name: set content in /etc/crypttab so I can mount the partition on reboot
-    copy:
-      content: "{{ crypt_name }} {{ target_device }}1 {{ keyfile }}"
-      dest: /etc/crypttab
-      owner: root
-      group: root
-      mode: 0644
+#  - name: mount device
+#    mount:
+#      path: /data
+#      src: "/dev/mapper/{{ crypt_name }}"
+#      state: mounted
+#      fstype: ext4
+#      boot: no
+#
+#  - name: put some content in my new filesystem
+#    copy:
+#      content: "Hello secure world!"
+#      dest: /data/hello_world.txt
+#
+#  - name: set content in /etc/crypttab so I can mount the partition on reboot
+#    copy:
+#      content: "{{ crypt_name }}  {{ target_device }}1   none   luks,tries=1"
+#      dest: /etc/crypttab
+#      owner: root
+#      group: root
+#      mode: 0644
+#
+#  - name: remove device from fstab
+#    mount:
+#      path: /data
+#      src: "/dev/mapper/{{ crypt_name }}"
+#      state: absent
+#
+#
+##  - name: set content in /etc/crypttab so I can mount the partition on reboot
+##    copy:
+##      content: "{{ crypt_name }} {{ target_device }}1 {{ keyfile }}"
+##      dest: /etc/crypttab
+##      owner: root
+##      group: root
+##      mode: 0644
