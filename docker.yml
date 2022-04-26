@@ -1,0 +1,72 @@
+##################################################################################################
+## DOCKER
+##    To get the latest docker, use official Docker repo, as per
+##     https://www.digitalocean.com/community/tutorials/how-to-use-ansible-to-install-and-set-up-docker-on-ubuntu-20-04
+##################################################################################################
+-
+- hosts: all
+  become: yes
+  become_method: sudo
+  tasks:
+  - name: Add Docker GPG apt Key
+    apt_key:
+      url: https://download.docker.com/linux/ubuntu/gpg
+      state: present
+
+  - name: Add Docker Repository
+    apt_repository:
+      repo: deb https://download.docker.com/linux/ubuntu focal stable
+      state: present
+
+  - name: Update apt, Install Docker + Compose packages
+    apt:
+      name:
+        - docker-ce
+        - docker-compose-plugin
+      state: latest
+      update_cache: true
+
+  - name: Make sure docker service is enabled
+    service:
+      name: docker
+      state: started
+      enabled: yes
+
+  - name: Install Docker Module for Python
+    pip:
+      name:
+        - docker
+        - docker-compose
+
+  - name: Check if a reboot is needed for Debian and Ubuntu boxes
+    register: reboot_required_file
+    stat: path=/var/run/reboot-required get_md5=no
+
+  - name: Reboot the Debian or Ubuntu server
+    reboot:
+      msg: "Reboot initiated by Ansible due to kernel updates"
+      connect_timeout: 5
+      reboot_timeout: 300
+      pre_reboot_delay: 0
+      post_reboot_delay: 30
+      test_command: uptime
+    when: reboot_required_file.stat.exists
+
+  ##################################################################################################
+  ## Server Configuration
+  ###
+  ##################################################################################################
+
+  - name: Copy docker-compose directory to remote
+    ansible.builtin.copy:
+      src: ./xnat-docker-compose-ccfrelay/
+      dest: /root/xnat-docker-compose-ccfrelay/
+      owner: root
+      group: root
+
+  #  - name: Create and Start services
+  #    community.docker.docker_compose:
+  #      project_src: /root/xnat-docker-compose-ccfrelay
+  #      project_name: xnat
+  #      build: yes
+
