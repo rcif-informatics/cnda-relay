@@ -66,6 +66,8 @@
         device: "{{ target_device }}1"
         state: present
         name: "{{ crypt_name }}"
+        # Bad place to keep passphrase, even examples.
+        # TODO: Move to extra-repo location like .env
         passphrase: "pwd"
         new_passphrase: "pwd2"
 
