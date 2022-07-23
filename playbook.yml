@@ -17,6 +17,7 @@
   - name: Install required system packages
     apt:
       pkg:
+        - unzip
         - git
         - fish
         - vim
@@ -30,4 +31,103 @@
         - virtualenv
         - python3-setuptools
       state: latest
+
+  - name: Additional useful tools
+    apt:
+      pkg:
+        - net-tools
+      state: latest
+
+  - name: Additional packages to support XNAT and other uses
+    apt:
+      pkg:
+        - docker.io
+        - docker-compose
+      state: latest
+
+  - name: Add MRH public key to root user
+    ansible.posix.authorized_key:
+      user: root
+      state: present
+      key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDAIQ866HC6Pz0fP7dfFfcAfxZqQNL5bBMoixaZTqeXkdzm8bt6zbYy8Z46z3ekcmoZOTDhZa/RHkmNoMKglL6uIShLBAp1OhPggg6GfsbqUFrkQ4u+Az/JGS5R6G4pW/ih+5cnu6Qgv2I7u8h31/BxbEGPT4TiCYYkRrCOAzg1PN95HmLl0j9hcbpEP6KPIRSXhfTZsM+XUL6spTYj8AV03aW3hi5ELaA1LPGEhTfPg7+odbT3wurrCXfwD4RyEQzKqFMMcCsCu5TWGY7E+D1qZ8Gojxe6Esk4bssZUht6lW3pRmGZsGXe6nFWKmRrSkLaQgwlDvNGP49ozzBiU1kMfwel2dBBI6Zn/ePqkoAIO5IyHt8STXZ2y6i0RO7xSQA35GsD70bv9GUPop6Ai23hO+4GHk74j5n4+J0gbIe35nGiPmmiPT1wlP6ka8X4qaGLEupBC0odify+u6J2E20yKqA6zNB74KkdccPYIbzEd1zxx/N1PXfGKpyxQfAxr1eGG/CmEQHnLNCxyctovL+hA+2Luz9o02ANsc04XKvQU1UH9Nua4P4mA+ZoFb95kX+ADGfVb+rWtQI+Kkqcdx/SpAD4JuQtSpNjd0lQIWr+zI6rtx7hljcgFYSKw6lvdKRPnc8EcqqYqsGyGT/QEe+YitLW/UgnIFO3Fucgu6L/8Q== michael@ubuntu1804"
+
+  - name: Create a directory if it does not exist - /data/docker
+    ansible.builtin.file:
+      path: /data/docker
+      state: directory
+      mode: '0755'
+
+  - name: Create a directory if it does not exist - /data/xnat
+    ansible.builtin.file:
+      path: /data/xnat
+      state: directory
+      mode: '0755'
+
+  - name: Create a directory if it does not exist - /data/home
+    ansible.builtin.file:
+      path: /data/home
+      state: directory
+      mode: '0755'
+
+  - name: Checkout xnat-docker-compose-ccfrelay
+    ansible.builtin.git:
+      repo: https://github.com/humanconnectome/xnat-docker-compose-ccfrelay.git
+      dest: /data/docker/xnat-docker-compose-ccfrelay
+      single_branch: yes
+      version: master
+      depth: 1
+
+  - name: Copy ccf-relay env file
+    ansible.builtin.copy:
+      src: ./secrets/ccfrelay.env
+      dest: /data/docker/xnat-docker-compose-ccfrelay/.env
+      remote_src: no
+
+  - name: Copy ccf-relay certificate
+    ansible.builtin.copy:
+      src: ./secrets/ccfrelay-selfsigned.crt
+      dest: /data/docker/xnat-docker-compose-ccfrelay/nginx/ccfrelay-selfsigned.crt
+      mode: preserve
+      remote_src: no
+
+  - name: Copy ccf-relay key
+    ansible.builtin.copy:
+      src: ./secrets/ccfrelay-selfsigned.key
+      dest: /data/docker/xnat-docker-compose-ccfrelay/nginx/ccfrelay-selfsigned.key
+      mode: preserve
+      remote_src: no
+
+#  - name: Download ccfrelay-tools repository
+#    ansible.builtin.unarchive:
+#      src: https://github.com/humanconnectome/ccfrelay-tools/archive/refs/heads/main.zip
+#      dest: /data
+#      remote_src: yes
+#
+#  - name: Move ccfrelay-tools xnat directory
+#    ansible.builtin.shell:
+#      cmd: cp -R /data/ccfrelay-tools-main/xnat /data 
+#
+#  - name: Move ccfrelay-tools scripts directory
+#    ansible.builtin.shell:
+#      cmd: cp -R /data/ccfrelay-tools-main/scripts /data 
+#
+#  - name: Run startup script
+#    ansible.builtin.shell:
+#      cmd: rm -r /data/ccfrelay-tools-main
+
+  - name: Setup reboot cron 
+    ansible.builtin.cron:
+      name: reboot_start_docker
+      special_time: reboot
+      job: "/data/docker/xnat-docker-compose-ccfrelay/tools/start_docker.sh"
+
+  - name: Setup hourly cron 
+    ansible.builtin.cron:
+      name: hourly_start_docker
+      special_time: hourly
+      job: "/data/docker/xnat-docker-compose-ccfrelay/tools/start_docker.sh"
+
+  - name: Run startup script (restart)
+    ansible.builtin.shell:
+      cmd: /data/docker/xnat-docker-compose-ccfrelay/tools/start_docker.sh --restart
 

@@ -10,7 +10,7 @@ Vagrant.configure("2") do |config|
   config.vm.box_check_update = false
   config.vm.define "relay01" do |relay1|
     relay1.vm.hostname = "relay01"
-    relay1.vm.network :private_network, ip: "192.168.56.1"
+    relay1.vm.network :private_network, ip: "192.168.56.11"
   end
 
   # Create a forwarded port mapping which allows access to a specific port
