@@ -69,6 +69,17 @@
       state: directory
       mode: '0755'
 
+  - name: Create a directory if it does not exist - /data/xnat/home/relay_tools
+    ansible.builtin.file:
+      path: /data/xnat/home/relay_tools
+      state: directory
+      mode: '0755'
+
+  - name: Remove previous aspera_keys directory if it exists - /data/docker/xnat-docker-compose-ccfrelay/xnat/aspera_keys
+    ansible.builtin.file:
+      state: absent
+      path: /data/docker/xnat-docker-compose-ccfrelay/xnat/aspera_keys
+
   - name: Checkout xnat-docker-compose-ccfrelay
     ansible.builtin.git:
       repo: https://github.com/humanconnectome/xnat-docker-compose-ccfrelay.git
@@ -76,6 +87,13 @@
       single_branch: yes
       version: master
       depth: 1
+      force: yes
+
+  - name: Create a directory if it does not exist - /data/docker/xnat-docker-compose-ccfrelay/xnat/aspera_keys
+    ansible.builtin.file:
+      path: /data/docker/xnat-docker-compose-ccfrelay/xnat/aspera_keys
+      state: directory
+      mode: '0755'
 
   - name: Copy ccf-relay env file
     ansible.builtin.copy:
@@ -90,10 +108,31 @@
       mode: preserve
       remote_src: no
 
-  - name: Copy ccf-relay key
+  - name: Copy ccf-relay certificate
     ansible.builtin.copy:
       src: ./secrets/ccfrelay-selfsigned.key
       dest: /data/docker/xnat-docker-compose-ccfrelay/nginx/ccfrelay-selfsigned.key
+      mode: preserve
+      remote_src: no
+
+  - name: Copy ccf-relay aspera private key
+    ansible.builtin.copy:
+      src: ./secrets/ccfrelay-ecdsa-key
+      dest: /data/docker/xnat-docker-compose-ccfrelay/xnat/aspera_keys/ccfrelay-ecdsa-key
+      mode: preserve
+      remote_src: no
+
+  - name: Copy ccf-relay aspera public key
+    ansible.builtin.copy:
+      src: ./secrets/ccfrelay-ecdsa-key.pub
+      dest: /data/docker/xnat-docker-compose-ccfrelay/xnat/aspera_keys/ccfrelay-ecdsa-key.pub
+      mode: preserve
+      remote_src: no
+
+  - name: Copy xsync_transfer_file script
+    ansible.builtin.copy:
+      src: ./xnat-docker-compose-ccfrelay/xnat/relay_tools/xsync_transfer_file
+      dest: /data/xnat/home/relay_tools/xsync_transfer_file
       mode: preserve
       remote_src: no
 

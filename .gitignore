@@ -2,6 +2,7 @@ secrets/
 # Vagrant files
 .vagrant/
 *.vdi
+hostfile
 luksKey
 
 # Byte-compiled / optimized / DLL files
