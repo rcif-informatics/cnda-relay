@@ -80,6 +80,11 @@
       state: absent
       path: /data/docker/xnat-docker-compose-ccfrelay/xnat/aspera_keys
 
+  - name: Remove previous relay_tools directory if it exists - /data/docker/xnat-docker-compose-ccfrelay/xnat/relay_tools
+    ansible.builtin.file:
+      state: absent
+      path: /data/docker/xnat-docker-compose-ccfrelay/xnat/relay_tools
+
   - name: Checkout xnat-docker-compose-ccfrelay
     ansible.builtin.git:
       repo: https://github.com/humanconnectome/xnat-docker-compose-ccfrelay.git
@@ -92,6 +97,12 @@
   - name: Create a directory if it does not exist - /data/docker/xnat-docker-compose-ccfrelay/xnat/aspera_keys
     ansible.builtin.file:
       path: /data/docker/xnat-docker-compose-ccfrelay/xnat/aspera_keys
+      state: directory
+      mode: '0755'
+
+  - name: Create a directory if it does not exist - /data/docker/xnat-docker-compose-ccfrelay/xnat/relay_tools
+    ansible.builtin.file:
+      path: /data/docker/xnat-docker-compose-ccfrelay/xnat/relay_tools
       state: directory
       mode: '0755'
 
@@ -129,30 +140,12 @@
       mode: preserve
       remote_src: no
 
-  - name: Copy xsync_transfer_file script
+  - name: Copy aspera license
     ansible.builtin.copy:
-      src: ./xnat-docker-compose-ccfrelay/xnat/relay_tools/xsync_transfer_file
-      dest: /data/xnat/home/relay_tools/xsync_transfer_file
+      src: ./secrets/aspera-license
+      dest: /data/docker/xnat-docker-compose-ccfrelay/xnat/relay_tools/aspera-license
       mode: preserve
       remote_src: no
-
-#  - name: Download ccfrelay-tools repository
-#    ansible.builtin.unarchive:
-#      src: https://github.com/humanconnectome/ccfrelay-tools/archive/refs/heads/main.zip
-#      dest: /data
-#      remote_src: yes
-#
-#  - name: Move ccfrelay-tools xnat directory
-#    ansible.builtin.shell:
-#      cmd: cp -R /data/ccfrelay-tools-main/xnat /data 
-#
-#  - name: Move ccfrelay-tools scripts directory
-#    ansible.builtin.shell:
-#      cmd: cp -R /data/ccfrelay-tools-main/scripts /data 
-#
-#  - name: Run startup script
-#    ansible.builtin.shell:
-#      cmd: rm -r /data/ccfrelay-tools-main
 
   - name: Setup reboot cron 
     ansible.builtin.cron:
