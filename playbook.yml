@@ -36,6 +36,8 @@
     apt:
       pkg:
         - net-tools
+        - jq
+        - coreutils
       state: latest
 
   - name: Additional packages to support XNAT and other uses
@@ -50,6 +52,18 @@
       user: root
       state: present
       key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDAIQ866HC6Pz0fP7dfFfcAfxZqQNL5bBMoixaZTqeXkdzm8bt6zbYy8Z46z3ekcmoZOTDhZa/RHkmNoMKglL6uIShLBAp1OhPggg6GfsbqUFrkQ4u+Az/JGS5R6G4pW/ih+5cnu6Qgv2I7u8h31/BxbEGPT4TiCYYkRrCOAzg1PN95HmLl0j9hcbpEP6KPIRSXhfTZsM+XUL6spTYj8AV03aW3hi5ELaA1LPGEhTfPg7+odbT3wurrCXfwD4RyEQzKqFMMcCsCu5TWGY7E+D1qZ8Gojxe6Esk4bssZUht6lW3pRmGZsGXe6nFWKmRrSkLaQgwlDvNGP49ozzBiU1kMfwel2dBBI6Zn/ePqkoAIO5IyHt8STXZ2y6i0RO7xSQA35GsD70bv9GUPop6Ai23hO+4GHk74j5n4+J0gbIe35nGiPmmiPT1wlP6ka8X4qaGLEupBC0odify+u6J2E20yKqA6zNB74KkdccPYIbzEd1zxx/N1PXfGKpyxQfAxr1eGG/CmEQHnLNCxyctovL+hA+2Luz9o02ANsc04XKvQU1UH9Nua4P4mA+ZoFb95kX+ADGfVb+rWtQI+Kkqcdx/SpAD4JuQtSpNjd0lQIWr+zI6rtx7hljcgFYSKw6lvdKRPnc8EcqqYqsGyGT/QEe+YitLW/UgnIFO3Fucgu6L/8Q== michael@ubuntu1804"
+
+  - name: Create .netrc file
+    ansible.builtin.copy:
+      src: ./secrets/netrc
+      dest: "~/.netrc"
+      mode: '0600'
+
+  - name: Create .netrc file
+    ansible.builtin.copy:
+      src: ./secrets/netrc
+      dest: "~/.netrc"
+      mode: '0600'
 
   - name: Create a directory if it does not exist - /data/docker
     ansible.builtin.file:
@@ -147,6 +161,10 @@
       mode: preserve
       remote_src: no
 
+  - name: Set timezone
+    ansible.builtin.shell:
+      cmd: timedatectl set-timezone "`curl --fail https://ipapi.co/timezone`"
+
   - name: Setup reboot cron 
     ansible.builtin.cron:
       name: reboot_start_docker
@@ -158,6 +176,12 @@
       name: hourly_start_docker
       special_time: hourly
       job: "/data/docker/xnat-docker-compose-ccfrelay/tools/start_docker.sh"
+
+  - name: Setup daily cleanup cron 
+    ansible.builtin.cron:
+      name: daily_cleanup_relay
+      special_time: daily
+      job: "/data/docker/xnat-docker-compose-ccfrelay/tools/cleanup_relay.sh"
 
   - name: Run startup script (restart)
     ansible.builtin.shell:
