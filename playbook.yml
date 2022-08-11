@@ -58,12 +58,7 @@
       src: ./secrets/netrc
       dest: "~/.netrc"
       mode: '0600'
-
-  - name: Create .netrc file
-    ansible.builtin.copy:
-      src: ./secrets/netrc
-      dest: "~/.netrc"
-      mode: '0600'
+      force: no
 
   - name: Create a directory if it does not exist - /data/docker
     ansible.builtin.file:
