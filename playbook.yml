@@ -138,14 +138,32 @@
   - name: Copy ccf-relay aspera private key
     ansible.builtin.copy:
       src: ./secrets/ccfrelay-ecdsa-key
-      dest: /data/docker/xnat-docker-compose-ccfrelay/xnat/aspera_keys/ccfrelay-ecdsa-key
+      #dest: /data/docker/xnat-docker-compose-ccfrelay/xnat/aspera_keys/ccfrelay-ecdsa-key
+      dest: /root/.ssh/ccfrelay-ecdsa-key
+      mode: preserve
+      remote_src: no
+
+  - name: Copy ccf-relay aspera private key (standard name)
+    ansible.builtin.copy:
+      src: ./secrets/ccfrelay-ecdsa-key
+      #dest: /data/docker/xnat-docker-compose-ccfrelay/xnat/aspera_keys/ccfrelay-ecdsa-key
+      dest: /root/.ssh/id_ecdsa
       mode: preserve
       remote_src: no
 
   - name: Copy ccf-relay aspera public key
     ansible.builtin.copy:
       src: ./secrets/ccfrelay-ecdsa-key.pub
-      dest: /data/docker/xnat-docker-compose-ccfrelay/xnat/aspera_keys/ccfrelay-ecdsa-key.pub
+      #dest: /data/docker/xnat-docker-compose-ccfrelay/xnat/aspera_keys/ccfrelay-ecdsa-key.pub
+      dest: /root/.ssh/ccfrelay-ecdsa-key.pub
+      mode: preserve
+      remote_src: no
+
+  - name: Copy ccf-relay aspera public key (standard name)
+    ansible.builtin.copy:
+      src: ./secrets/ccfrelay-ecdsa-key.pub
+      #dest: /data/docker/xnat-docker-compose-ccfrelay/xnat/aspera_keys/ccfrelay-ecdsa-key.pub
+      dest: /root/.ssh/id_ecdsa.pub
       mode: preserve
       remote_src: no
 
