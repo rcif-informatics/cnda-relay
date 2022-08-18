@@ -103,11 +103,11 @@
       depth: 1
       force: yes
 
-  - name: Create a directory if it does not exist - /data/docker/xnat-docker-compose-ccfrelay/xnat/aspera_keys
-    ansible.builtin.file:
-      path: /data/docker/xnat-docker-compose-ccfrelay/xnat/aspera_keys
-      state: directory
-      mode: '0755'
+#  - name: Create a directory if it does not exist - /data/docker/xnat-docker-compose-ccfrelay/xnat/aspera_keys
+#    ansible.builtin.file:
+#      path: /data/docker/xnat-docker-compose-ccfrelay/xnat/aspera_keys
+#      state: directory
+#      mode: '0755'
 
   - name: Create a directory if it does not exist - /data/docker/xnat-docker-compose-ccfrelay/xnat/relay_tools
     ansible.builtin.file:
@@ -135,7 +135,7 @@
       mode: preserve
       remote_src: no
 
-  - name: Copy ccf-relay aspera private key
+  - name: Copy ccf-relay aspera private key (standard location)
     ansible.builtin.copy:
       src: ./secrets/ccfrelay-ecdsa-key
       #dest: /data/docker/xnat-docker-compose-ccfrelay/xnat/aspera_keys/ccfrelay-ecdsa-key
@@ -143,7 +143,7 @@
       mode: preserve
       remote_src: no
 
-  - name: Copy ccf-relay aspera private key (standard name)
+  - name: Copy ccf-relay aspera private key (standard name, standard location)
     ansible.builtin.copy:
       src: ./secrets/ccfrelay-ecdsa-key
       #dest: /data/docker/xnat-docker-compose-ccfrelay/xnat/aspera_keys/ccfrelay-ecdsa-key
@@ -151,7 +151,7 @@
       mode: preserve
       remote_src: no
 
-  - name: Copy ccf-relay aspera public key
+  - name: Copy ccf-relay aspera public key (standard location)
     ansible.builtin.copy:
       src: ./secrets/ccfrelay-ecdsa-key.pub
       #dest: /data/docker/xnat-docker-compose-ccfrelay/xnat/aspera_keys/ccfrelay-ecdsa-key.pub
@@ -159,7 +159,29 @@
       mode: preserve
       remote_src: no
 
-  - name: Copy ccf-relay aspera public key (standard name)
+  - name: Copy mount_data.sh script (don't overwrite if exists)
+    ansible.builtin.copy:
+      src: ./tools/mount_data.sh
+      #dest: /data/docker/xnat-docker-compose-ccfrelay/xnat/aspera_keys/ccfrelay-ecdsa-key
+      dest: /root/mount_data.sh
+      mode: preserve
+      force: no
+      remote_src: no
+
+  - name: Copy check_mount.sh script (don't overwrite if exists)
+    ansible.builtin.copy:
+      src: ./tools/check_mount.sh
+      #dest: /data/docker/xnat-docker-compose-ccfrelay/xnat/aspera_keys/ccfrelay-ecdsa-key
+      dest: /root/check_mount.sh
+      mode: preserve
+      force: no
+      remote_src: no
+
+  - name: Run check_mount.sh script to see if we should proceed
+    ansible.builtin.shell:
+      cmd: /root/check_mount.sh
+
+  - name: Copy ccf-relay aspera public key (standard name, standard location)
     ansible.builtin.copy:
       src: ./secrets/ccfrelay-ecdsa-key.pub
       #dest: /data/docker/xnat-docker-compose-ccfrelay/xnat/aspera_keys/ccfrelay-ecdsa-key.pub
