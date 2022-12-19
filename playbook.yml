@@ -159,11 +159,29 @@
       mode: preserve
       remote_src: no
 
+  - name: Copy start_docker.sh script (don't overwrite if exists)
+    ansible.builtin.copy:
+      src: ./tools/start_docker.sh
+      #dest: /data/docker/xnat-docker-compose-ccfrelay/xnat/aspera_keys/ccfrelay-ecdsa-key
+      dest: /root/start_docker.sh
+      mode: preserve
+      force: no
+      remote_src: no
+
   - name: Copy mount_data.sh script (don't overwrite if exists)
     ansible.builtin.copy:
       src: ./tools/mount_data.sh
       #dest: /data/docker/xnat-docker-compose-ccfrelay/xnat/aspera_keys/ccfrelay-ecdsa-key
       dest: /root/mount_data.sh
+      mode: preserve
+      force: no
+      remote_src: no
+
+  - name: Copy start_all.sh script (don't overwrite if exists)
+    ansible.builtin.copy:
+      src: ./tools/start_all.sh
+      #dest: /data/docker/xnat-docker-compose-ccfrelay/xnat/aspera_keys/ccfrelay-ecdsa-key
+      dest: /root/start_all.sh
       mode: preserve
       force: no
       remote_src: no

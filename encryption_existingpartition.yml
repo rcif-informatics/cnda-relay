@@ -2,8 +2,9 @@
   hosts: all
   become: true
   vars:
-    target_size: 1720GB
+    #target_size: 1720GB
     target_device: /dev/nvme0n1
+    target_partition: p3
     crypt_name: data
 
   tasks:
@@ -45,25 +46,25 @@
         debug:
           msg: "{{ info_output }}"
 
-  - name: block to attempt parted
-    block:
-    - name: use parted in block to create new partition
-      parted:
-        device: "{{ target_device }}"
-        number: 1
-        state: present
-        part_end: "{{ target_size }}"
-      register: parted_output
-    rescue:
-      - name: parted failed
-        fail:
-          msg: 'parted failed:  {{ parted_output }}'
+  #- name: block to attempt parted
+  #  block:
+  #  - name: use parted in block to create new partition
+  #    parted:
+  #      device: "{{ target_device }}"
+  #      number: 1
+  #      state: present
+  #      part_end: "{{ target_size }}"
+  #    register: parted_output
+  #  rescue:
+  #    - name: parted failed
+  #      fail:
+  #        msg: 'parted failed:  {{ parted_output }}'
 
   - name: block for LUKS and filesystem tasks
     block:
     - name: create LUKS container with passphrase
       luks_device:
-        device: "{{ target_device }}p1"
+        device: "{{ target_device }}{{ target_partition }}"
         state: present
         name: "{{ crypt_name }}"
         # Bad place to keep passphrase, even examples.
@@ -73,7 +74,7 @@
 
     - name: open luks container
       luks_device:
-        device: "{{ target_device }}p1"
+        device: "{{ target_device }}{{ target_partition }}"
         state: opened
         name: "{{ crypt_name }}"
         passphrase: "pwd"
