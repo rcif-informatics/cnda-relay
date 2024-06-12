@@ -1,3 +1,3 @@
-[submodule "xnat-docker-compose-ccfrelay"]
-	path = xnat-docker-compose-ccfrelay
-	url = g:humanconnectome/xnat-docker-compose-ccfrelay
+[submodule "xnat-docker-compose-cndarelay"]
+	path = xnat-docker-compose-cndarelay
+	url = https://github.com/rcif-informatics/xnat-docker-compose-cndarelay

@@ -1,5 +1,5 @@
-# ccf-relay
-For prototyping the setup of CCF Relay Systems on NUCs
+# cnda-relay
+For prototyping the setup of CNDA Relay Systems on NUCs
 
 
 ## Playbooks

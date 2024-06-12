@@ -67,16 +67,16 @@
         state: present
         name: "{{ crypt_name }}"
         # Bad place to keep passphrase, even examples.
-        # TODO: Move to extra-repo location like .env
-        passphrase: "pwd"
-        new_passphrase: "pwd2"
+        # SET ENVIRONMENT: source ./secrets/setup_env.sh
+        passphrase: "{{ lookup('env', 'ENCRYPT_PW') }}"
+        new_passphrase: "{{ lookup('env', 'ENCRYPT_PW') }}"
 
     - name: open luks container
       luks_device:
         device: "{{ target_device }}p1"
         state: opened
         name: "{{ crypt_name }}"
-        passphrase: "pwd"
+        passphrase: "{{ lookup('env', 'ENCRYPT_PW') }}"
 
     - name: create a filesystem
       filesystem:

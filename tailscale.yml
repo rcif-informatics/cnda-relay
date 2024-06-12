@@ -9,7 +9,9 @@
     # This is a bad place to put the key, even as an example.
     # could accidently be added to repo. Please remove key
     # definition to some extra-repo file like .env etc.
-    tailscale_authkey: tskey-aaaaaaaaaaaa-bbbbbbbbbbccccccddddde
+    #tailscale_authkey: tskey-aaaaaaaaaaaa-bbbbbbbbbbccccccddddde
+    ## FIRST:  source ./secrets/setup_env.sh
+    tailscale_authkey: "{{ lookup('env', 'TAILSCALE_AUTHKEY') }}"
   tasks:
   - name: Add Tailscale GPG apt Key
     apt_key:

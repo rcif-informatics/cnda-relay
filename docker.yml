@@ -59,14 +59,14 @@
 
   - name: Copy docker-compose directory to remote
     ansible.builtin.copy:
-      src: ./xnat-docker-compose-ccfrelay/
-      dest: /root/xnat-docker-compose-ccfrelay/
+      src: ./xnat-docker-compose-cndarelay/
+      dest: /root/xnat-docker-compose-cndarelay/
       owner: root
       group: root
 
   #  - name: Create and Start services
   #    community.docker.docker_compose:
-  #      project_src: /root/xnat-docker-compose-ccfrelay
+  #      project_src: /root/xnat-docker-compose-cndarelay
   #      project_name: xnat
   #      build: yes
 
