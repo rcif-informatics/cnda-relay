@@ -100,6 +100,8 @@
       dest: /data/docker/xnat-docker-compose-cndarelay
       single_branch: yes
       version: master
+      # For relay-specific branch
+      #version: ucsd-relay1-branch
       depth: 1
       force: yes
 
@@ -195,9 +197,96 @@
       force: no
       remote_src: no
 
+  - name: Copy ascp_test.txt script (don't overwrite if exists)
+    ansible.builtin.copy:
+      src: ./tools/ascp_test.txt
+      #dest: /data/docker/xnat-docker-compose-cndarelay/xnat/aspera_keys/cndarelay-ecdsa-key
+      dest: /root/ascp_test.txt
+      mode: preserve
+      force: no
+      remote_src: no
+
+  - name: Copy test_aspera.sh script (don't overwrite if exists)
+    ansible.builtin.copy:
+      src: ./tools/test_aspera.sh
+      #dest: /data/docker/xnat-docker-compose-cndarelay/xnat/aspera_keys/cndarelay-ecdsa-key
+      dest: /root/test_aspera.sh
+      mode: preserve
+      force: no
+      remote_src: no
+
+  - name: Copy test_aspera_docker.sh script (don't overwrite if exists)
+    ansible.builtin.copy:
+      src: ./tools/test_aspera_docker.sh
+      #dest: /data/docker/xnat-docker-compose-cndarelay/xnat/aspera_keys/cndarelay-ecdsa-key
+      dest: /root/test_aspera_docker.sh
+      mode: preserve
+      force: no
+      remote_src: no
+
+  - name: Copy docker-interactive script (don't overwrite if exists)
+    ansible.builtin.copy:
+      src: ./tools/docker-interactive
+      #dest: /data/docker/xnat-docker-compose-cndarelay/xnat/aspera_keys/cndarelay-ecdsa-key
+      dest: /root/docker-interactive
+      mode: preserve
+      force: no
+      remote_src: no
+
+  - name: Copy README_ASPERA_TEST.txt script (don't overwrite if exists)
+    ansible.builtin.copy:
+      src: ./tools/README_ASPERA_TEST.txt
+      #dest: /data/README_ASPERA_TEST.txt-docker-compose-cndarelay/xnat/aspera_keys/cndarelay-ecdsa-key
+      dest: /root/README_ASPERA_TEST.txt
+      mode: preserve
+      force: no
+      remote_src: no
+
   - name: Run check_mount.sh script to see if we should proceed
     ansible.builtin.shell:
       cmd: /root/check_mount.sh
+
+  - name: Create a directory if it does not exist - /data/xnat/build/ascp_test
+    ansible.builtin.file:
+      path: /data/xnat/build/ascp_test
+      state: directory
+      mode: '0755'
+
+  - name: Copy ascp_test.txt script (don't overwrite if exists)
+    ansible.builtin.copy:
+      src: ./tools/ascp_test.txt
+      #dest: /data/docker/xnat-docker-compose-cndarelay/xnat/aspera_keys/cndarelay-ecdsa-key
+      dest: /data/xnat/build/ascp_test/ascp_test.txt
+      mode: preserve
+      force: no
+      remote_src: no
+
+  - name: Copy test_aspera.sh script (don't overwrite if exists)
+    ansible.builtin.copy:
+      src: ./tools/test_aspera.sh
+      #dest: /data/docker/xnat-docker-compose-cndarelay/xnat/aspera_keys/cndarelay-ecdsa-key
+      dest: /data/xnat/build/ascp_test/test_aspera.sh
+      mode: preserve
+      force: no
+      remote_src: no
+
+  - name: Copy xsync_transfer_file script (don't overwrite if exists)
+    ansible.builtin.copy:
+      src: ./xnat-docker-compose-cndarelay/xnat/relay_tools/xsync_transfer_file
+      #dest: /data/docker/xnat-docker-compose-cndarelay/xnat/aspera_keys/cndarelay-ecdsa-key
+      dest: /data/xnat/home/relay_tools/xsync_transfer_file
+      mode: preserve
+      force: no
+      remote_src: no
+
+  - name: Copy ascp (don't overwrite if exists)
+    ansible.builtin.copy:
+      src: ./xnat-docker-compose-cndarelay/xnat/relay_tools/ascp
+      #dest: /data/docker/xnat-docker-compose-cndarelay/xnat/aspera_keys/cndarelay-ecdsa-key
+      dest: /data/xnat/home/relay_tools/ascp
+      mode: preserve
+      force: no
+      remote_src: no
 
   - name: Copy cnda-relay aspera public key (standard name, standard location)
     ansible.builtin.copy:

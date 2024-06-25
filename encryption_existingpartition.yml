@@ -3,8 +3,10 @@
   become: true
   vars:
     #target_size: 1720GB
-    target_device: /dev/sda
-    target_partition: 3
+    #target_device: /dev/sda
+    #target_partition: 3
+    target_device: /dev/nvme0n1
+    target_partition: p3
     crypt_name: data
 
   tasks:

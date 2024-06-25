@@ -1,2 +1,2 @@
 #!/bin/bash
-docker exec -it `docker ps | grep "8080.*8104" | cut -d' ' -f1` /bin/bash
+docker exec -it `docker ps | grep ":8104" | cut -d' ' -f1` /bin/bash
