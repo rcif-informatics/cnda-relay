@@ -99,9 +99,9 @@
       repo: https://github.com/rcif-informatics/xnat-docker-compose-cndarelay.git
       dest: /data/docker/xnat-docker-compose-cndarelay
       single_branch: yes
-      version: master
+      #version: master
       # For relay-specific branch
-      #version: ucsd-relay1-branch
+      version: ucsd-relay1-branch
       depth: 1
       force: yes
 
@@ -229,6 +229,24 @@
       src: ./tools/docker-interactive
       #dest: /data/docker/xnat-docker-compose-cndarelay/xnat/aspera_keys/cndarelay-ecdsa-key
       dest: /root/docker-interactive
+      mode: preserve
+      force: no
+      remote_src: no
+
+  - name: Copy docker-interactive-postgres script (don't overwrite if exists)
+    ansible.builtin.copy:
+      src: ./tools/docker-interactive-postgres
+      #dest: /data/docker/xnat-docker-compose-cndarelay/xnat/aspera_keys/cndarelay-ecdsa-key
+      dest: /root/docker-interactive-postgres
+      mode: preserve
+      force: no
+      remote_src: no
+
+  - name: Copy restart_docker.sh script (don't overwrite if exists)
+    ansible.builtin.copy:
+      src: ./tools/restart_docker.sh
+      #dest: /data/docker/xnat-docker-compose-cndarelay/xnat/aspera_keys/cndarelay-ecdsa-key
+      dest: /root/restart_docker.sh
       mode: preserve
       force: no
       remote_src: no
