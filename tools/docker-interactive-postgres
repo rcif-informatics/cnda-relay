@@ -1,0 +1,2 @@
+#!/bin/bash
+docker exec -it `docker ps | grep "postgres:12" | cut -d' ' -f1` /bin/bash
