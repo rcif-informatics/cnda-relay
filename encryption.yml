@@ -2,11 +2,16 @@
   hosts: all
   become: true
   vars:
-    target_size: 1720GB
-    target_device: /dev/nvme0n1
+    target_size: 50GB
+    target_device: /dev/sda3
     crypt_name: data
 
   tasks:
+  - name: Create a directory if it does not exist - /data
+    ansible.builtin.file:
+      path: /data
+      state: directory
+      mode: '0755'
   - name: block for doing basic setup and verification for target system
     block:
     - name: get facts for "{{ target_device }}"
@@ -82,7 +87,14 @@
       filesystem:
         fstype: ext4
         dev: "/dev/mapper/{{ crypt_name }}"
-
+        
+    - name: mount device
+      mount:
+        path: /data
+        src: "/dev/mapper/{{ crypt_name }}"
+        state: mounted
+        fstype: ext4
+        boot: no
 
 #  - name: mount device
 #    mount:

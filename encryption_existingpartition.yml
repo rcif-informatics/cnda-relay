@@ -1,124 +1,106 @@
-- name: pb to create partition
+---
+- name: Create/open LUKS and mount /data using explicit keyfile
   hosts: all
   become: true
+
+  collections:
+    - ansible.posix
+
   vars:
-    #target_size: 1720GB
-    #target_device: /dev/sda
-    #target_partition: 3
-    target_device: /dev/nvme0n1
-    target_partition: p3
+    target_device: /dev/sda
+    target_partition: 3
     crypt_name: data
+    mount_point: /data
+    luks_keyfile: /root/luks_pw.txt
+    debug_keep_keyfile: false    # <--- set to true when debugging
+    
 
   tasks:
-  - name: block for doing basic setup and verification for target system
-    block:
-    - name: get facts for "{{ target_device }}"
-      parted:
-        device: "{{ target_device }}"
-      register: target_facts
+    - name: Ensure ENCRYPT_PW is set in environment
+      ansible.builtin.assert:
+        that: lookup('env','ENCRYPT_PW') | length > 0
+        fail_msg: "ENCRYPT_PW environment variable is not set"
 
-    - name: print facts for "{{ target_device }}"
-      debug:
-        msg: "{{ target_facts }}"
+    - name: Create mount point
+      ansible.builtin.file:
+        path: "{{ mount_point }}"
+        state: directory
+        mode: '0755'
 
-    - name: check to see if there are any facts for /dev/vdb1. this means there are existing partitions that we would overwrite, so fail
-      debug:
-        msg: "{{ target_facts }}.partitions"
-#      failed_when: ansible_devices.sdc.partitions.sdc1 is defined   ### if vdb1 is defined, there's already a partition there, so abort.
+    - name: Write LUKS keyfile on target from controller env
+      ansible.builtin.copy:
+        content: "{{ lookup('env','ENCRYPT_PW') | trim }}"
+        dest: "{{ luks_keyfile }}"
+        owner: root
+        group: root
+        mode: '0600'
+      no_log: true
 
-    - name: print size for the disk
-      debug:
-        msg: "the size is {{ target_facts['disk']['size'] }} kib"
+    # ---------- LUKS format ----------
+    - name: Check if target is already LUKS
+      ansible.builtin.command:
+        cmd: cryptsetup isLuks "{{ target_device }}{{ target_partition }}"
+      register: is_luks
+      failed_when: false
+      changed_when: false
 
-    - name: make sure cryptsetup is installed
-      apt:
-        name: cryptsetup
-        state: latest
+    - name: LUKS format device using keyfile
+      ansible.builtin.command:
+        cmd: >-
+          cryptsetup --batch-mode luksFormat
+          "{{ target_device }}{{ target_partition }}"
+          --type luks2 --pbkdf argon2id
+          --key-file "{{ luks_keyfile }}"
+      when: is_luks.rc != 0
+      no_log: true
 
+    # ---------- Open mapper ----------
+    - name: Check if mapper is already open
+      ansible.builtin.stat:
+        path: "/dev/mapper/{{ crypt_name }}"
+      register: mapper_stat
 
-  - name: block to attempt to get info on what my destination device will become
-    block:
-      - name: task to attempt to get info on what my destination device will be
-        parted:
-          device: "{{ target_device}}"
-          number: 1
-          state: info
-        register: info_output
-      - name: print info_output
-        debug:
-          msg: "{{ info_output }}"
+    - name: Open LUKS mapper using keyfile
+      ansible.builtin.command:
+        cmd: >-
+          cryptsetup --batch-mode open
+          "{{ target_device }}{{ target_partition }}"
+          "{{ crypt_name }}"
+          --key-file "{{ luks_keyfile }}"
+      when: not mapper_stat.stat.exists
+      no_log: true
 
-  #- name: block to attempt parted
-  #  block:
-  #  - name: use parted in block to create new partition
-  #    parted:
-  #      device: "{{ target_device }}"
-  #      number: 1
-  #      state: present
-  #      part_end: "{{ target_size }}"
-  #    register: parted_output
-  #  rescue:
-  #    - name: parted failed
-  #      fail:
-  #        msg: 'parted failed:  {{ parted_output }}'
+    # ---------- Filesystem ----------
+    - name: Detect filesystem on mapper
+      ansible.builtin.command:
+        cmd: blkid -o value -s TYPE "/dev/mapper/{{ crypt_name }}"
+      register: fs_type
+      failed_when: false
+      changed_when: false
 
-  - name: block for LUKS and filesystem tasks
-    block:
-    - name: create LUKS container with passphrase
-      luks_device:
-        device: "{{ target_device }}{{ target_partition }}"
-        state: present
-        name: "{{ crypt_name }}"
-        # Bad place to keep passphrase, even examples.
-        # TODO: Move to extra-repo location like .env
-        passphrase: "{{ lookup('env', 'ENCRYPT_PW') }}"
-        new_passphrase: "{{ lookup('env', 'ENCRYPT_PW') }}"
-
-    - name: open luks container
-      luks_device:
-        device: "{{ target_device }}{{ target_partition }}"
-        state: opened
-        name: "{{ crypt_name }}"
-        passphrase: "{{ lookup('env', 'ENCRYPT_PW') }}"
-
-    - name: create a filesystem
-      filesystem:
+    - name: Create ext4 filesystem (only if none)
+      ansible.builtin.filesystem:
         fstype: ext4
         dev: "/dev/mapper/{{ crypt_name }}"
+      when: fs_type.rc != 0
 
+    # ---------- Mount ----------
+    - name: Mount /data
+      ansible.posix.mount:
+        path: "{{ mount_point }}"
+        src: "/dev/mapper/{{ crypt_name }}"
+        fstype: ext4
+        state: mounted
+        boot: no
 
-#  - name: mount device
-#    mount:
-#      path: /data
-#      src: "/dev/mapper/{{ crypt_name }}"
-#      state: mounted
-#      fstype: ext4
-#      boot: no
-#
-#  - name: put some content in my new filesystem
-#    copy:
-#      content: "Hello secure world!"
-#      dest: /data/hello_world.txt
-#
-#  - name: set content in /etc/crypttab so I can mount the partition on reboot
-#    copy:
-#      content: "{{ crypt_name }}  {{ target_device }}1   none   luks,tries=1"
-#      dest: /etc/crypttab
-#      owner: root
-#      group: root
-#      mode: 0644
-#
-#  - name: remove device from fstab
-#    mount:
-#      path: /data
-#      src: "/dev/mapper/{{ crypt_name }}"
-#      state: absent
-#
-#
-##  - name: set content in /etc/crypttab so I can mount the partition on reboot
-##    copy:
-##      content: "{{ crypt_name }} {{ target_device }}1 {{ keyfile }}"
-##      dest: /etc/crypttab
-##      owner: root
-##      group: root
-##      mode: 0644
+    - name: Check if keyfile exists
+      ansible.builtin.stat:
+        path: "{{ luks_keyfile }}"
+      register: keyfile_stat
+    
+    - name: Securely delete keyfile unless debugging
+      ansible.builtin.file:
+        path: "{{ luks_keyfile }}"
+        state: absent
+      when: keyfile_stat.stat.exists and not debug_keep_keyfile
+

@@ -30,6 +30,8 @@
 #        - python3-dev
         - virtualenv
         - python3-setuptools
+        - gnupg
+        - lsb-release
       state: latest
 
   - name: Additional useful tools
@@ -40,11 +42,48 @@
         - coreutils
       state: latest
 
-  - name: Additional packages to support XNAT and other uses
+  - name: Ensure apt is up to date
+    apt:
+      update_cache: yes
+
+  - name: Add Docker’s official GPG key
+    ansible.builtin.get_url:
+      url: https://download.docker.com/linux/ubuntu/gpg
+      dest: /tmp/docker.gpg
+      mode: '0644'
+
+  - name: Ensure the GPG key is properly dearmored
+    ansible.builtin.command: |
+      gpg --yes --batch --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg /tmp/docker.gpg
+
+  - name: Clean up temporary GPG file
+    ansible.builtin.file:
+      path: /tmp/docker.gpg
+      state: absent
+
+  - name: Gather facts
+    ansible.builtin.setup:
+
+  - name: Add Docker’s official GPG key
+    ansible.builtin.get_url:
+      url: https://download.docker.com/linux/ubuntu/gpg
+      dest: /usr/share/keyrings/docker-archive-keyring.gpg
+      mode: '0644'
+
+  - name: Set up the Docker stable repository
+    apt_repository:
+      repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu {{ ansible_facts['lsb']['codename'] }} stable"
+      state: present
+
+  - name: Update apt cache
+    apt:
+      update_cache: yes
+
+  - name: Install Docker and Compose plugin
     apt:
       pkg:
         - docker.io
-        - docker-compose
+        - docker-compose-plugin
       state: latest
 
   - name: Add MRH public key to root user
