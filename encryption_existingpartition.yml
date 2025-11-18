@@ -7,7 +7,8 @@
     - ansible.posix
 
   vars:
-    target_device: /dev/sda
+    #target_device: /dev/sda
+    target_device: /dev/nvme0n1p
     target_partition: 3
     crypt_name: data
     mount_point: /data
@@ -103,4 +104,24 @@
         path: "{{ luks_keyfile }}"
         state: absent
       when: keyfile_stat.stat.exists and not debug_keep_keyfile
+
+    # ---------- Clean up crypttab/fstab so boot never touches it ----------
+    - name: Remove any crypttab entry for this mapping
+      ansible.builtin.lineinfile:
+        path: /etc/crypttab
+        regexp: '^{{ crypt_name }}\s'
+        state: absent
+        backup: yes
+
+    - name: Remove any fstab entry for this mount point
+      ansible.builtin.lineinfile:
+        path: /etc/fstab
+        regexp: '^\S+\s+{{ mount_point }}\s'
+        state: absent
+        backup: yes
+
+    - name: Update initramfs after crypttab change (Debian/Ubuntu)
+      ansible.builtin.command:
+        cmd: update-initramfs -u
+      when: ansible_facts.os_family == 'Debian'
 
